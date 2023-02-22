@@ -26,10 +26,12 @@ dnn_config = "yolov3.cfg"
 classes = []
 
 net = cv2.dnn.readNet(dnn_model, dnn_config)
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
 #Load coco names
 with open("coco.names", "r") as f:
-    [line.strip() for line in f.readlines()]
+    classes =[line.strip() for line in f.readlines()]
 layer_names = net.getLayerNames()
 output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
