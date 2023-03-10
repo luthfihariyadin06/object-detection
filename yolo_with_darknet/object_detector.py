@@ -3,7 +3,7 @@ import time
 import numpy as np
 
 #Opening Camera
-device_id = 8
+device_id = 0
 winname = 'Camera Output'
 capture = cv2.VideoCapture(device_id)
 
@@ -14,15 +14,15 @@ new_time = 0
 
 #FPS text const
 org = (0, 50)
-font_scale = 0.5
+font_scale = 1
 font_color = (90, 252, 3)
-font_thickness = 1
+font_thickness = 2
 font_line_type = cv2.LINE_AA
 font_bottom_left_origin = False
 
 #DNN object detection
-dnn_model = "yolov3.weights"
-dnn_config = "yolov3.cfg"
+dnn_model = "yolo_with_darknet/yolov3-tiny.weights"
+dnn_config = "yolo_with_darknet/yolov3-tiny.cfg"
 classes = []
 
 net = cv2.dnn.readNet(dnn_model, dnn_config)
@@ -30,10 +30,10 @@ net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
 net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
 #Load coco names
-with open("coco.names", "r") as f:
+with open("yolo_with_darknet/coco.names", "r") as f:
     classes =[line.strip() for line in f.readlines()]
 layer_names = net.getLayerNames()
-output_layers = [layer_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
+output_layers = [layer_names[i - 1] for i in net.getUnconnectedOutLayers()]
 colors = np.random.uniform(0, 255, size=(len(classes), 3))
 
 #Blob from images parameters
