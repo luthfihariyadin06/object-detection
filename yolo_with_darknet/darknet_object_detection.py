@@ -47,6 +47,7 @@ class DarknetDNN:
         self.object_contours = []
         self.object_positions = []
         self.object_confidences = []
+        self.object_area = []
 
         for out in outs:
             for detection in out:
@@ -54,14 +55,20 @@ class DarknetDNN:
 
                 class_id = np.argmax(scores)
                 confidance = scores[class_id]
-                
+
+                # To filter object confidance
                 if confidance < self.detection_threshold:
+                    continue
+                
+                # To filter out other than 'Person' object
+                if class_id != 0:
                     continue
                 
                 cx = int(detection[0] * width)
                 cy = int(detection[1] * height)
                 w = int(detection[2] * width)
                 h = int(detection[3] * height)
+                area = int(w * h)
 
                 x1 = int(cx - w/1.8)
                 y1 = int(cy - h/1.8)
@@ -72,7 +79,14 @@ class DarknetDNN:
                 self.object_classes.append(class_id)
                 self.object_centers.append([cx, cy])
                 self.object_confidences.append(confidance)
-                #print(f"Conf = {confidance} and object is : {self.classes[class_id]}")
+                self.object_area.append(area)
+                
+                if cx <= width/3:
+                    self.object_positions.append('Left')
+                elif cx >= 2*width/3:
+                    self.object_positions.append('Right')
+                else:
+                    self.object_positions.append('Center')
 
         #return self.object_boxes, self.object_classes
 
@@ -120,11 +134,9 @@ class DarknetDNN:
             self.object_classes.append(class_id)
 
 
-        
-    
     def draw_object(self, frame):
         indexes = cv2.dnn.NMSBoxes(self.object_boxes, self.object_confidences, 0.4, 0.3)
-        for i, box, class_id, center in zip(range(len(self.object_boxes)), self.object_boxes, self.object_classes, self.object_centers):
+        for i, box, class_id, center, position in zip(range(len(self.object_boxes)), self.object_boxes, self.object_classes, self.object_centers, self.object_positions):
             if i not in indexes:
                 continue
 
@@ -133,10 +145,20 @@ class DarknetDNN:
             name = self.classes[class_id]
             color = self.colors[int(class_id)]
             color = (int(color[0]), int(color[1]), int(color[2]))
+            this_position = position
+            
             cv2.circle(frame, (cx, cy), 10, color, 2)
             cv2.rectangle(frame, (x1, y1), (x2, y2), color, 1)
             cv2.putText(frame, name.capitalize(), (x1 + 5, y1 + 25), 0, 0.8, (255, 255, 255), 2)
+            cv2.putText(frame, this_position, (x1+5, y1+50), 0, 0.8, (255, 255, 255), 2)
 
+    def get_command(self):
+        #for box, class_id, contours in zip():
+        if not self.object_area:
+            return 'Hold'
+        else:
+            return self.object_positions[self.object_area.index(max(self.object_area))]
+        pass
 
     def get_classes(self):
         return self.classes
